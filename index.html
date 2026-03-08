@@ -697,23 +697,38 @@ async function boot() {
   applyTheme();
   showLoading();
 
-  // onAuthStateChange handles everything including OAuth redirects
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (session?.user) {
-      currentUser = session.user;
-      await loadUserData();
-      updateGreeting(currentUser);
-      document.getElementById("today-date").textContent = fmtFull(new Date().toISOString());
-      renderTplPicker();
-      showApp();
-      // Clean up URL hash after OAuth redirect
-      if (window.location.hash) {
-        history.replaceState(null, "", window.location.pathname);
+  // Parse token from URL hash (Supabase OAuth redirect)
+  if (window.location.hash && window.location.hash.includes("access_token")) {
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    if (access_token) {
+      const { data, error } = await sb.auth.setSession({ access_token, refresh_token });
+      history.replaceState(null, "", window.location.pathname);
+      if (data?.session?.user) {
+        currentUser = data.session.user;
+        await loadUserData();
+        updateGreeting(currentUser);
+        document.getElementById("today-date").textContent = fmtFull(new Date().toISOString());
+        renderTplPicker();
+        showApp();
+        return;
       }
-    } else {
-      showLogin();
     }
-  });
+  }
+
+  // Check existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await loadUserData();
+    updateGreeting(currentUser);
+    document.getElementById("today-date").textContent = fmtFull(new Date().toISOString());
+    renderTplPicker();
+    showApp();
+  } else {
+    showLogin();
+  }
 }
 
 boot();
