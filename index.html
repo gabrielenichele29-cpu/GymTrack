@@ -420,6 +420,7 @@ function selectTpl(id){
   logTpl=t;
   logExercises=t.exercises.map(e=>({
     name:e.name,sets:e.sets,reps:"",weight:"",restSecs:e.restSecs||0,fromTemplate:true,
+    repsTemplate: e.reps||"—",
     lastSession: getLastSession(e.name),
     setData:Array.from({length:e.sets},()=>({reps:"",weight:""}))
   }));
@@ -434,10 +435,10 @@ function renderLogExList(){
     const sets=ex.setData||Array.from({length:ex.sets||3},()=>({reps:"",weight:""}));
     const timerBtn=ex.restSecs>0?`<span class="timer-badge" onclick="openTimer(${ex.restSecs},'${(ex.name||"").replace(/'/g,"\\'")}')">⏱ ${Math.floor(ex.restSecs/60)}:${String(ex.restSecs%60).padStart(2,"0")}</span>`:"";
     const removeBtn=!ex.fromTemplate?`<button onclick="removeLogEx(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1;">×</button>`:"";
-    const lastInfo = ex.lastSession
-      ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);font-weight:400;">ultima: ${ex.lastSession.sets} ser${ex.lastSession.weight ? " · " + ex.lastSession.weight + "kg" : ""}</span>`
+    const tplInfo = ex.fromTemplate
+      ? `<span style="font-family:'Barlow Condensed',sans-serif;font-size:11px;letter-spacing:1px;color:var(--muted);font-weight:400;">${ex.sets} ser × ${ex.repsTemplate||"—"}${ex.lastSession?.weight ? " · " + ex.lastSession.weight + "kg" : ""}</span>`
       : "";
-    return `<div class="log-ex-block slide-in"><div class="log-ex-name"><div style="display:flex;flex-direction:column;gap:2px;"><span>${ex.name||"Esercizio"}</span>${lastInfo}</div><div style="display:flex;gap:8px;align-items:center;">${timerBtn}${removeBtn}</div></div><div class="sets-grid">${sets.map((sd,si)=>`<div class="set-box"><div class="set-label">Serie ${si+1}</div><input class="set-input" type="text" inputmode="text" placeholder="rip" value="${sd.reps||""}" oninput="logExercises[${i}].setData[${si}].reps=this.value" /><input class="set-kg" type="number" min="0" step="0.5" placeholder="kg" value="${sd.weight||""}" oninput="logExercises[${i}].setData[${si}].weight=this.value?+this.value:''" /></div>`).join("")}</div></div>`;
+    return `<div class="log-ex-block slide-in"><div class="log-ex-name"><div style="display:flex;flex-direction:column;gap:2px;"><span>${ex.name||"Esercizio"}</span>${tplInfo}</div><div style="display:flex;gap:8px;align-items:center;">${timerBtn}${removeBtn}</div></div><div class="sets-grid">${sets.map((sd,si)=>`<div class="set-box"><div class="set-label">Serie ${si+1}</div><input class="set-input" type="text" inputmode="text" placeholder="rip" value="${sd.reps||""}" oninput="logExercises[${i}].setData[${si}].reps=this.value" /><input class="set-kg" type="number" min="0" step="0.5" placeholder="kg" value="${sd.weight||""}" oninput="logExercises[${i}].setData[${si}].weight=this.value?+this.value:''" /></div>`).join("")}</div></div>`;
   }).join("");
   document.querySelectorAll("[data-addbtn]").forEach(b=>b.remove());
   if(!logExercises[0]?.fromTemplate){const btn=document.createElement("button");btn.className="btn-ghost";btn.style.cssText="width:100%;margin-bottom:18px;";btn.textContent="+ Aggiungi esercizio";btn.setAttribute("data-addbtn","1");btn.onclick=addLogEx;document.getElementById("log-ex-list").after(btn);}
